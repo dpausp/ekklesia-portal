@@ -44,16 +44,18 @@ def ballot_to_vvvote_question(ballot, question_id=1):
 def voting_phase_to_vvvote_election_config(module_config, phase) -> vvvote_schema.ElectionConfig:
     questions = [ballot_to_vvvote_question(b, ii) for ii, b in enumerate(phase.ballots, start=1)]
 
-    voting_start = phase.voting_start
-    if voting_start is None:
+    if phase.registration_start is None:
+        raise ValueError("Cannot create voting for phase {phase}, registration_start is None")
+
+    if phase.registration_end is None:
+        raise ValueError("Cannot create voting for phase {phase}, registration_end is None")
+
+    if phase.voting_start is None:
         raise ValueError("Cannot create voting for phase {phase}, voting_start is None")
 
-    end = phase.voting_end
-    if end is None:
+    if phase.voting_end is None:
         raise ValueError("Cannot create voting for phase {phase}, voting_end is None")
 
-    registration_days_before_voting = module_config.get("registration_days_before_voting", 0)
-    registration_start = voting_start - datetime.timedelta(days=registration_days_before_voting)
 
     auth_data = vvvote_schema.OAuthConfig(
         eligible=module_config["must_be_eligible"],
@@ -61,10 +63,10 @@ def voting_phase_to_vvvote_election_config(module_config, phase) -> vvvote_schem
         verified=module_config["must_be_verified"],
         nested_groups=[module_config["required_role"]],
         serverId=module_config["auth_server_id"],
-        RegistrationStartDate=registration_start,
-        RegistrationEndDate=end,
-        VotingStart=voting_start,
-        VotingEnd=end,
+        RegistrationStartDate=phase.registration_start,
+        RegistrationEndDate=phase.registration_end,
+        VotingStart=phase.voting_start,
+        VotingEnd=phase.voting_end,
     )
     config = vvvote_schema.ElectionConfig(
         electionId=str(uuid4()),

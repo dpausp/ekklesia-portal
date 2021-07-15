@@ -25,9 +25,11 @@ class VotingPhaseTypeCell(LayoutCell):
         'abbreviation',
         'description',
         'name',
+        'registration_end_days',
+        'registration_start_days',
         'secret_voting_possible',
-        'voting_type',
         'voting_days',
+        'voting_type',
     ]
 
     def show_edit_button(self):
@@ -40,6 +42,7 @@ class NewVotingPhaseTypeCell(NewFormCell):
 
     def _prepare_form_for_render(self):
         items = items_for_voting_phase_type_select_widgets(self._model)
+        self.set_form_data({"secret": True})
         self._form.prepare_for_render(items)
 
 

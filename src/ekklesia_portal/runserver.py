@@ -85,13 +85,19 @@ def run():
     if args.stackdump:
         stackdump_setup()
 
-    # use ipdb as default breakpoint() hook (Python 3.7 feature)
-    try:
-        import ipdb
-    except ImportError:
-        pass
+    if args.debug:
+        # use ipdb as default breakpoint() hook (Python 3.7 feature)
+        try:
+            import ipdb
+        except ImportError:
+            pass
+        else:
+            sys.breakpointhook = ipdb.set_trace
     else:
-        sys.breakpointhook = ipdb.set_trace
+        def breakpoint_in_production(*args, **kwargs):
+            pass
+
+        sys.breakpointhook = breakpoint_in_production
 
     with open(os.path.join(tmpdir, "ekklesia_portal.started"), "w") as wf:
         wf.write(datetime.datetime.now().isoformat())

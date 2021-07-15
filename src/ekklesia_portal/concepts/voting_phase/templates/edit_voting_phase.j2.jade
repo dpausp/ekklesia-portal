@@ -4,12 +4,8 @@
   title= _("title_edit_voting_phase")
 
 - block content
-  h2= _("title_edit_voting_phase")
-
-  = form_html
 
   if show_create_voting
-
     h2= _("title_create_voting")
 
     form.create_voting_form(action=create_voting_action, method="POST")
@@ -18,5 +14,20 @@
           i.far.fa-paper-plane
           |&nbsp;
           = _('create_voting_button', voting_module=voting_module)
+
+
+  h2= _("title_edit_voting_phase")
+
+  = form_html
+
+  if show_inherited_properties
+    h2= _('inherited_properties')
+
+    .help-text.mb-2= _('voting_phase_inherited_properties_explanation')
+
+    for property, value in inherited_properties
+      dt= _(property)
+      dd= value
+
 
 //- vim: set filetype=jade sw=2 ts=2 sts=2 expandtab:

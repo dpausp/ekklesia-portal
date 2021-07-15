@@ -11,7 +11,7 @@ def test_create_voting_phase_type(client, db_query, voting_phase_type_factory, l
     fill_form(
         form,
         data,
-        field_names=['name', 'abbreviation', 'description', 'secret_voting_possible'],
+        field_names=['name', 'abbreviation', 'description'],
         enum_field_names=['voting_type']
     )
 
@@ -23,6 +23,7 @@ def test_update_voting_phase_type(db_session, client, voting_phase_type_factory,
     voting_phase_type = voting_phase_type_factory()
     res = client.get(f'/voting_phase_types/{ voting_phase_type.id}/+edit')
     expected = voting_phase_type.to_dict()
+    del expected["secret_voting_possible"]
     form = assert_deform(res, expected)
     form['name'] = 'new name'
     form.submit(status=302)

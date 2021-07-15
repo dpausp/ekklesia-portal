@@ -13,16 +13,21 @@
 - block content
 
   .voting_phase.container
-    h4
-      a(href=self_link)= title or phase_type.name
-      if name
-        |&nbsp;({{ name }})
-
+    h2= _("voting_phase")
       if show_edit_button
         a.edit_button(href=edit_url)
           i.far.fa-edit
           |&nbsp;
           = _('edit_button')
+
+    ol.breadcrumb
+      li.breadcrumb-item
+        a(href=department_url)= department_name
+
+      li.breadcrumb-item.active
+        a(href=self_link)= title or phase_type.name
+        if name
+          |&nbsp;({{ name }})
 
     dl
       dt= _('voting_phase_type')
@@ -35,26 +40,56 @@
           = target|dateformat
         else
           = _('not_determined')
-      dt= _('department')
-      dd= department.name
-      dt= _('ballots')
-      dd= ballots|length
-      dt= _('propositions')
-      dd= propositions|length
 
     if options.show_description
       .description
         = description|markdown
 
-    if show_voting and votings
-      h4= _('votings')
-      .voting_from_to= _('voting_start_end', start=voting_start|datetimeformat, end=voting_end|datetimeformat)
+    if show_voting_details
+      h4= _('title_voting')
 
-      ul.votings
-        for title, url in votings
-          li
-            a(href=url)= title
+      if show_will_be_able_to_vote
+          p
+            if can_participate_in_voting
+              i.fas.fa-check &nbsp;
+              = _("could_vote_currently")
+            else
+              i.fas.fa-times &nbsp;
+              = _("could_not_vote_currently")
+
+      if show_registration
+
+        p.help-text.mb-2= _("registration_links_help_text", end=registration_end|datetimeformat)
+
+        ul.votings
+          for title, url in votings
+            li
+              a(href=url)= title
+
+      if show_voting
+
+        p.help-text.mb-2= _("voting_links_help_text", end=voting_end|datetimeformat)
+
+        ul.votings
+          for title, url in votings
+            li
+              a(href=url)= title
+
+
+      if show_registration_period
+        .registration_from_to= _('registration_start_end', start=registration_start|datetimeformat, end=registration_end|datetimeformat)
+
+      if show_voting_period
+        .voting_from_to= _('voting_start_end', start=voting_start|datetimeformat, end=voting_end|datetimeformat)
+
 
     if options.show_proposition_list and propositions
       h4= _('propositions')
+      p {{ _('planned_for_this_voting_phase') }}:
+
+      .ballot_proposition_count.mb-3
+        | {{ ballots|length }} {{ ngettext("ballot", "ballots", ballots|length) }} {{ _("with_in_total") }}
+        | {{ propositions|length }} {{ ngettext("proposition", "propositions", propositions|length) }}
+
       = render_cell(collection=propositions)
+

@@ -94,19 +94,32 @@ def update(self, request, appstruct):
         if not department_allowed:
             return HTTPBadRequest("department not allowed")
 
-    voting_phase_type = request.q(VotingPhaseType).get(appstruct['phase_type_id'])
+    phase_type = request.q(VotingPhaseType).get(appstruct['phase_type_id'])
 
-    if voting_phase_type is None:
+    if phase_type is None:
         return HTTPBadRequest("voting phase type is missing")
 
+    previous_status = self.status
+
     self.update(**appstruct)
+
+    # Fill values from voting phase type when transitioning from PREPARING to VOTING.
+    # We don't want to touch these values anymore when VOTING even if the voting phase type changes
+    if previous_status == VotingStatus.PREPARING and self.status == VotingStatus.VOTING:
+        if not self.voting_days:
+            self.voting_days = phase_type.voting_days
+        if not self.registration_start_days:
+            self.registration_start_days = phase_type.registration_start_days
+        if not self.registration_end_days:
+            self.registration_end_days = phase_type.registration_end_days
+
     return redirect(request.link(self))
 
 
 @App.html(model=VotingPhase)
 def show(self, request):
     cell = VotingPhaseCell(
-        self, request, show_edit_button=True, show_voting=True, show_proposition_list=True, full_view=True
+        self, request, show_edit_button=True, show_voting_details=True, show_proposition_list=True, full_view=True
     )
     return cell.show()
 
@@ -132,7 +145,7 @@ def spickerrr(self, request):
 
 @App.html(model=VotingPhase, name="create_voting", request_method="POST", permission=EditPermission)
 def create_voting(self, request):
-    if self.voting_can_be_created:
+    if not self.voting_can_be_created:
         raise HTTPBadRequest("Voting phase is in the wrong state or target date is not set")
 
     voting_module_name = request.POST.get("create_voting")

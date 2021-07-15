@@ -91,6 +91,13 @@ class User(Base):
     def managed_departments(self):
         return [md.department for md in self.member_departments if md.is_admin]
 
+    @property
+    def can_vote(self):
+        if self.profile is None:
+            return False
+
+        return self.profile.eligible
+
 
 class UserPassword(Base):
     __tablename__ = 'userpassword'
@@ -322,6 +329,8 @@ class VotingPhaseType(Base):
     abbreviation: str = C(Text, server_default='', comment='abbreviated name')
     secret_voting_possible: bool = C(Boolean, nullable=False)
     voting_type = C(Enum(VotingType), nullable=False)  # online, urn, assembly, board
+    registration_start_days: int = C(Integer, comment='voter registration start in days relative to target date')
+    registration_end_days: int = C(Integer, comment='voter registration end in days relative to target date')
     voting_days: int = C(Integer, comment='voting duration in days; ends at target date')
     description: str = C(Text, server_default='')
 
@@ -334,6 +343,8 @@ class VotingPhase(Base):  # Abstimmungsperiode
     id: int = C(Integer, Sequence('id_seq', optional=True), primary_key=True)
     status: VotingStatus = C(Enum(VotingStatus), nullable=False, server_default='PREPARING')
     target: datetime = C(DateTime, comment='constrained by §4.1')
+    registration_start_days: int = C(Integer, comment='voter registration start in days relative to target date')
+    registration_end_days: int = C(Integer, comment='voter registration end in days relative to target date')
     voting_days: int = C(Integer, comment='voting duration in days; ends at target date')
     department_id: int = C(Integer, ForeignKey('departments.id'), nullable=False)
     phase_type_id: int = C(Integer, ForeignKey('voting_phase_types.id'), nullable=False)
@@ -362,6 +373,29 @@ class VotingPhase(Base):  # Abstimmungsperiode
     @property
     def ballots_can_be_added(self):
         return self.status == VotingStatus.PREPARING
+
+    @property
+    def registration_start(self):
+        if self.target is None:
+            return
+
+        days = self.registration_start_days or self.phase_type.registration_start_days
+
+        if days is None:
+            return
+
+        return self.target - timedelta(days=days)
+
+    @property
+    def registration_end(self):
+        """Registration ends at `target - registration_end_days` or
+        at `target` if registration_end_days is not set"""
+        if self.target is None:
+            return
+
+        days = self.registration_end_days or self.phase_type.registration_end_days or 0
+
+        return self.target - timedelta(days=days)
 
     @property
     def voting_can_be_created(self):
